@@ -248,16 +248,63 @@ function draw() {
   ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 2); ctx.fill(); ctx.fillStyle = '#f43f5e'; ctx.fillRect(npc.x + 10, npc.y + 10, 10, 10);
   ctx.fillStyle = '#f43f5e'; bullets.forEach(b => { if (b.active) { ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill(); } });
 
-  ctx.save(); ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-  const lookDir = Math.sign(player.velX || 1); const isMov = Math.abs(player.velX) > 10; const swing = isMov ? Math.sin(animationTime * 15) : 0; const jO = !player.isGrounded ? -5 : 0;
-  ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  // Draw Player (Doraemon with Professional Limbs)
+  ctx.save();
+  ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+  
+  const lookDir = Math.sign(player.velX || 1);
+  const isMov = Math.abs(player.velX) > 10;
+  const swing = isMov ? Math.sin(animationTime * 15) : 0;
+  const jO = !player.isGrounded ? -5 : 0;
+  const r = player.width / 2;
+
+  // Legs (White)
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  // Left Leg
   ctx.beginPath(); ctx.moveTo(-6, 10); ctx.lineTo(-8 + (isMov ? swing * 10 : 0), 22 + jO); ctx.stroke();
+  // Right Leg
   ctx.beginPath(); ctx.moveTo(6, 10); ctx.lineTo(8 - (isMov ? swing * 10 : 0), 22 + jO); ctx.stroke();
+
+  // Back Arm
   ctx.beginPath(); ctx.moveTo(-12 * lookDir, -5); ctx.lineTo(-18 * lookDir - (isMov ? swing * 10 : 0), 5); ctx.stroke();
-  ctx.fillStyle = '#f1f5f9'; ctx.beginPath(); ctx.roundRect(-12, -18, 24, 30, 8); ctx.fill(); ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Doraemon Body (Blue)
+  ctx.fillStyle = '#38bdf8';
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  
+  // White Belly/Face
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(0, 4, r * 0.8, 0, Math.PI * 2); ctx.fill();
+
+  // Front Arm
   ctx.beginPath(); ctx.moveTo(12 * lookDir, -5); ctx.lineTo(18 * lookDir + (isMov ? swing * 10 : 0), 5); ctx.stroke();
-  ctx.fillStyle = '#f1f5f9'; ctx.beginPath(); ctx.arc(0, -28, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(lookDir * 4 + 3, -30, 2, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(lookDir * 4 - 3, -30, 2, 0, Math.PI * 2); ctx.fill();
+
+  // Red Nose
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath(); ctx.arc(lookDir * 6, 0, 4, 0, Math.PI * 2); ctx.fill();
+
+  // Whiskers
+  ctx.strokeStyle = 'black'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 + 4, 2); ctx.lineTo(lookDir * 6 + 15, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 + 4, 4); ctx.lineTo(lookDir * 6 + 15, 6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 - 4, 2); ctx.lineTo(lookDir * 6 - 15, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 - 4, 4); ctx.lineTo(lookDir * 6 - 15, 6); ctx.stroke();
+
+  // Eyes
+  ctx.fillStyle = 'white'; ctx.strokeStyle = 'black'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(lookDir * 4 - 5, -8, 6, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(lookDir * 4 + 5, -8, 6, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'black';
+  ctx.beginPath(); ctx.arc(lookDir * 4 - 3, -6, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(lookDir * 4 + 7, -6, 2, 0, Math.PI * 2); ctx.fill();
+
+  // Red Collar & Bell
+  ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.roundRect(-r * 0.7, r * 0.6, r * 1.4, 6, 3); ctx.fill();
+  ctx.fillStyle = '#facc15'; ctx.strokeStyle = '#854d0e'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(lookDir * 2, r * 0.85, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
   ctx.restore();
 }
 
