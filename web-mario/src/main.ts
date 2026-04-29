@@ -419,164 +419,170 @@ function draw() {
 
   drawBackground();
 
-  // Draw Platforms with Gradients
+  // Draw Platforms (Grass & Dirt)
   for (const plat of platforms) {
-    const gradient = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.h);
-    gradient.addColorStop(0, '#334155');
-    gradient.addColorStop(1, '#1e293b');
-    
-    ctx.fillStyle = gradient;
+    // Dirt
+    ctx.fillStyle = '#92400e';
     ctx.beginPath();
-    ctx.roundRect(plat.x, plat.y, plat.w, plat.h, 6);
+    ctx.roundRect(plat.x, plat.y + 8, plat.w, plat.h - 8, 4);
     ctx.fill();
     
-    // Top light edge
-    ctx.fillStyle = 'rgba(255,255,255,0.1)';
-    ctx.fillRect(plat.x + 2, plat.y + 2, plat.w - 4, 2);
+    // Grass Top
+    ctx.fillStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.roundRect(plat.x, plat.y, plat.w, 12, 4);
+    ctx.fill();
     
-    // Border
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
+    // Highlights
+    ctx.fillStyle = '#bef264';
+    ctx.fillRect(plat.x + 5, plat.y + 3, plat.w - 10, 3);
   }
 
-  // Draw Goal (Yellow Door - Glowing)
-  ctx.save();
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = '#fbbf24';
-  ctx.fillStyle = '#fbbf24';
+  // Draw Goal (Cute Candy Door)
+  ctx.fillStyle = '#fb7185';
   ctx.beginPath();
-  ctx.roundRect(goal.x, goal.y, goal.w, goal.h, [10, 10, 0, 0]);
+  ctx.roundRect(goal.x, goal.y, goal.w, goal.h, [20, 20, 0, 0]);
   ctx.fill();
-  ctx.restore();
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 4;
+  ctx.stroke();
   
-  // Door Detail
-  ctx.strokeStyle = '#92400e';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(goal.x + 5, goal.y + 5, goal.w - 10, goal.h - 5);
+  // Heart on Door
+  ctx.fillStyle = 'white';
+  ctx.font = '20px serif';
+  ctx.fillText('❤️', goal.x + 10, goal.y + 35);
 
-  // Draw Meteorites (Circular & Glowing)
+  // Draw Meteorites (Angry Suns)
   meteorites.forEach(m => {
     if (m.active) {
       const radius = m.w / 2;
-      const grad = ctx.createRadialGradient(m.x + radius, m.y + radius, 0, m.x + radius, m.y + radius, radius);
-      grad.addColorStop(0, '#94a3b8');
-      grad.addColorStop(0.8, '#475569');
-      grad.addColorStop(1, '#ef4444');
-      
-      ctx.save();
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = '#ef4444';
-      ctx.fillStyle = grad;
+      ctx.fillStyle = '#facc15';
       ctx.beginPath();
       ctx.arc(m.x + radius, m.y + radius, radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
+      
+      // Angry Eyes
+      ctx.fillStyle = 'black';
+      ctx.fillRect(m.x + radius - 10, m.y + radius - 5, 4, 4);
+      ctx.fillRect(m.x + radius + 6, m.y + radius - 5, 4, 4);
+      
+      // Mouth
+      ctx.beginPath();
+      ctx.arc(m.x + radius, m.y + radius + 8, 5, 0, Math.PI, true);
+      ctx.stroke();
+      
+      // Sun Rays (Simple)
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 4;
+      for(let i=0; i<8; i++) {
+        ctx.save();
+        ctx.translate(m.x + radius, m.y + radius);
+        ctx.rotate(i * Math.PI / 4);
+        ctx.beginPath(); ctx.moveTo(0, -radius - 5); ctx.lineTo(0, -radius - 12); ctx.stroke();
+        ctx.restore();
+      }
     }
   });
 
-  // Draw NPC (Cyber Style)
-  ctx.fillStyle = '#0f172a';
+  // Draw NPC (Cute Robot)
+  ctx.fillStyle = '#e2e8f0';
   ctx.beginPath();
-  ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 8);
+  ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 10);
   ctx.fill();
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#94a3b8';
   ctx.stroke();
   
   // NPC Eyes
-  ctx.save();
-  ctx.fillStyle = '#f43f5e';
-  ctx.shadowBlur = 10;
-  ctx.shadowColor = '#f43f5e';
-  ctx.fillRect(npc.x + 6, npc.y + 12, 6, 4);
-  ctx.fillRect(npc.x + 18, npc.y + 12, 6, 4);
-  ctx.restore();
+  ctx.fillStyle = '#38bdf8';
+  ctx.beginPath();
+  ctx.arc(npc.x + 8, npc.y + 15, 3, 0, Math.PI * 2);
+  ctx.arc(npc.x + 22, npc.y + 15, 3, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Gun
+  // Gun (Water Gun)
   ctx.save();
   ctx.translate(npc.x + npc.w / 2, npc.y + npc.h / 2);
   const angle = Math.atan2((player.y + player.height / 2) - (npc.y + npc.h / 2), (player.x + player.width / 2) - (npc.x + npc.w / 2));
   ctx.rotate(angle);
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(12, -5, 22, 10);
   ctx.fillStyle = '#38bdf8';
-  ctx.fillRect(30, -3, 6, 6);
+  ctx.fillRect(12, -4, 18, 8);
   ctx.restore();
 
-  // Draw Bullets (Glowing)
-  ctx.save();
-  ctx.fillStyle = '#fbbf24';
-  ctx.shadowBlur = 10;
-  ctx.shadowColor = '#fbbf24';
+  // Draw Bullets (Bubbles)
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.5)';
+  ctx.strokeStyle = 'white';
   bullets.forEach(b => {
     if (b.active) {
       ctx.beginPath();
-      ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
     }
   });
-  ctx.restore();
 
-  // Draw Player
+  // Draw Player (Cute Slime)
   ctx.save();
   ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
   
   let scaleX = 1;
   let scaleY = 1;
   if (!player.isGrounded) {
-    scaleY = 1.15;
-    scaleX = 0.85;
+    scaleY = 1.2;
+    scaleX = 0.8;
   }
   ctx.scale(scaleX, scaleY);
 
-  const playerGrad = ctx.createLinearGradient(-16, -24, 16, 24);
-  playerGrad.addColorStop(0, '#38bdf8');
-  playerGrad.addColorStop(1, '#818cf8');
-  
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = '#38bdf8';
-  ctx.fillStyle = playerGrad;
+  // Body
+  ctx.fillStyle = '#fb7185';
   ctx.beginPath();
-  ctx.roundRect(-player.width/2, -player.height/2, player.width, player.height, 10);
+  ctx.ellipse(0, 0, player.width/2, player.height/2, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
   
-  // Player Eyes (Expressive)
-  ctx.fillStyle = 'white';
+  // Highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(-5, -10, 6, 4, Math.PI/4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = 'black';
   const lookDir = Math.sign(player.velX || 0.1);
-  ctx.fillRect(lookDir * 6 + 2, -12, 6, 8);
-  ctx.fillRect(lookDir * 6 - 8, -12, 6, 8);
+  ctx.beginPath(); ctx.arc(lookDir * 6 + 4, -4, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(lookDir * 6 - 8, -4, 3, 0, Math.PI * 2); ctx.fill();
+  
+  // Rosy Cheeks
+  ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
+  ctx.beginPath(); ctx.arc(lookDir * 6 + 10, 2, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(lookDir * 6 - 14, 2, 4, 0, Math.PI * 2); ctx.fill();
+
+  // Smile
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(lookDir * 6 - 2, 2, 4, 0.2 * Math.PI, 0.8 * Math.PI);
+  ctx.stroke();
 
   ctx.restore();
 }
 
-const stars = Array.from({ length: 50 }, () => ({
+const clouds = Array.from({ length: 5 }, () => ({
   x: Math.random() * 800,
-  y: Math.random() * 500,
-  size: Math.random() * 2,
-  speed: Math.random() * 20 + 10
+  y: Math.random() * 150 + 50,
+  w: Math.random() * 100 + 80,
+  speed: Math.random() * 10 + 5
 }));
 
 function drawBackground() {
-  // Static grid
-  ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 800; i += 40) {
-    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 500); ctx.stroke();
-  }
-  for (let i = 0; i < 500; i += 40) {
-    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(800, i); ctx.stroke();
-  }
-
-  // Floating stars
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-  stars.forEach(s => {
+  // Draw Clouds
+  ctx.fillStyle = 'white';
+  clouds.forEach(c => {
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    ctx.arc(c.x, c.y, c.w/3, 0, Math.PI * 2);
+    ctx.arc(c.x + c.w/4, c.y - 10, c.w/3, 0, Math.PI * 2);
+    ctx.arc(c.x + c.w/2, c.y, c.w/3, 0, Math.PI * 2);
     ctx.fill();
-    s.x -= s.speed * 0.01;
-    if (s.x < 0) s.x = 800;
+    c.x -= c.speed * 0.01;
+    if (c.x + c.w < 0) c.x = 800;
   });
 }
 
