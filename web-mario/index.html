@@ -10,33 +10,58 @@
     <div id="app">
       <div id="login-screen" class="login-screen">
         <div class="login-content">
-          <h1>Chào mừng xạ thủ</h1>
-          <p>Nhập tên của bạn để bắt đầu thử thách</p>
-          <input type="text" id="player-name-input" placeholder="Tên của bạn..." maxlength="15" />
-          <button id="start-game-btn">BẮT ĐẦU</button>
+          <h1>TORIO: HELL MODE</h1>
+          <p>The ultimate 2D precision challenge</p>
+          <input type="text" id="player-name-input" placeholder="Enter your name..." maxlength="15" />
+          <button id="start-game-btn">START CHALLENGE</button>
         </div>
       </div>
 
-      <h1>Mario Controller Web</h1>
-      <p class="subtitle">A highly responsive 2D physics demo</p>
-      
-      <div class="game-container">
+      <div class="game-viewport">
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
-        <div class="ui-overlay">
-          <div id="grounded-badge" class="debug-badge">Grounded</div>
-          <div id="coyote-badge" class="debug-badge">Coyote Time</div>
-          <div id="buffer-badge" class="debug-badge">Jump Buffered</div>
-          <div id="double-jump-badge" class="debug-badge">Double Jump Avail.</div>
-          <div id="apex-badge" class="debug-badge">Jump Apex</div>
+        <div class="game-title-box">
+          <h1>TORIO</h1>
+          <div class="mode-badge">HELL MODE ACTIVE</div>
         </div>
-        
+
+        <div class="hud-console">
+          <div class="hud-panel">
+            <div class="hud-header">
+              <span>SYSTEM STATUS</span>
+              <span id="fps-counter">LIVE</span>
+            </div>
+            <div id="grounded-badge" class="hud-stat">
+              <span>GROUNDED</span>
+              <div class="status-dot"></div>
+            </div>
+            <div id="coyote-badge" class="hud-stat">
+              <span>COYOTE TIME</span>
+              <div class="status-dot"></div>
+            </div>
+            <div id="buffer-badge" class="hud-stat">
+              <span>JUMP BUFFER</span>
+              <div class="status-dot"></div>
+            </div>
+            <div id="double-jump-badge" class="hud-stat">
+              <span>DOUBLE JUMP</span>
+              <div class="status-dot"></div>
+            </div>
+            <div id="apex-badge" class="hud-stat">
+              <span>APEX PHYSICS</span>
+              <div class="status-dot"></div>
+            </div>
+          </div>
+        </div>
+
         <div id="message-overlay" class="message-overlay hidden">
           <span id="message-text"></span>
         </div>
-        
-        <div class="controls-hint">
-          <kbd>A</kbd> <kbd>D</kbd> or <kbd>←</kbd> <kbd>→</kbd> to Move &bull; <kbd>Space</kbd> or <kbd>W</kbd> to Jump
+
+        <div class="controls-guide">
+          <span>[A/D] MOVE</span>
+          <span>[SPACE] JUMP / 2X DOUBLE</span>
+          <span>[R] RESTART</span>
         </div>
       </div>
     </div>

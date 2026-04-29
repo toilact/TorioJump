@@ -47,39 +47,63 @@ const player = {
 
 const keys: { [key: string]: boolean } = {};
 const platforms = [
-  { x: 0, y: 450, w: 200, h: 50 }, // Starting Floor
-  { x: 300, y: 400, w: 100, h: 20 }, // Step 1
-  { x: 500, y: 350, w: 100, h: 20 }, // Step 2
-  { x: 250, y: 250, w: 80, h: 20 },  // High ledge left
-  { x: 100, y: 180, w: 60, h: 20 },  // Tiny platform
-  { x: 400, y: 150, w: 150, h: 20 }, // Long middle
-  { x: 650, y: 100, w: 100, h: 20 }, // Goal Platform
-  { x: 50, y: 80, w: 100, h: 20 },   // Top left secret
-  { x: 450, y: 450, w: 350, h: 50 }, // End floor
-  { x: 700, y: 300, w: 20, h: 100 }, // Vertical wall test
+  { x: 0, y: 450, w: 150, h: 50 }, // Start
+  { x: 200, y: 380, w: 40, h: 20 },  // Precision Step 1
+  { x: 300, y: 320, w: 40, h: 20 },  // Precision Step 2
+  { x: 100, y: 240, w: 40, h: 20 },  // Precision Step 3 (Backtrack)
+  { x: 250, y: 160, w: 200, h: 20, isMoving: true, startX: 250, range: 200 }, // Moving Platform
+  { x: 550, y: 220, w: 80, h: 20 },  // Mid Rest
+  { x: 700, y: 150, w: 40, h: 20 },  // High precision
+  { x: 500, y: 80, w: 100, h: 20 },  // Near Goal
+  { x: 700, y: 50, w: 60, h: 20 },   // Goal Platform
+  { x: 0, y: 480, w: 800, h: 20 },  // Death pit visualization
 ];
 
-const goal = { x: 700, y: 40, w: 40, h: 60 }; // The Yellow Door
+const goal = { x: 710, y: -10, w: 40, h: 60 }; 
 
 // --- Troll Logic ---
 const meteorites: { x: number, y: number, w: number, h: number, active: boolean }[] = [];
 const trollTriggers = [
-  { x: 350, spawned: false }, // Trigger near first jump
-  { x: 550, spawned: false }, // Trigger near goal platform
-  { x: 150, spawned: false }, // Early game surprise
+  { x: 220, spawned: false }, 
+  { x: 500, spawned: false }, 
+  { x: 680, spawned: false }, 
 ];
 
 // --- NPC Shooter ---
-const npc = { x: 450, y: 110, w: 30, h: 40, shootTimer: 0 }; // Sitting on the long middle platform
+const npc = { x: 550, y: 180, w: 30, h: 40, shootTimer: 0 }; 
 const bullets: { x: number, y: number, vx: number, vy: number, active: boolean }[] = [];
-const BULLET_SPEED = 300;
-const SHOOT_INTERVAL = 1.5;
 
 let isFakeWinning = false;
 let fakeWinTimer = 0;
+let animationTime = 0;
 
-// --- Audio System (Synthesized) ---
+// --- Audio System ---
 const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+// ... (audio functions stay same)
+
+// --- Input Handling ---
+window.addEventListener('keydown', (e) => {
+  if (keys[e.code]) return;
+  keys[e.code] = true;
+  if (e.code === 'KeyR') respawn(); // Quick restart
+  if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+    player.jumpBufferCounter = config.jumpBufferTime;
+    if (!player.isGrounded && player.jumpsRemaining > 0 && player.isJumping) {
+      executeJump(true);
+    }
+  }
+});
+
+// ... (keyup stays same)
+
+// --- UI Elements ---
+const badges = {
+  grounded: document.getElementById('grounded-badge')!,
+  coyote: document.getElementById('coyote-badge')!,
+  buffer: document.getElementById('buffer-badge')!,
+  apex: document.getElementById('apex-badge')!,
+  double: document.getElementById('double-jump-badge')!,
+};
 
 function playJumpSound() {
   const osc = audioCtx.createOscillator();
@@ -139,13 +163,21 @@ const badges = {
   double: document.getElementById('double-jump-badge')!,
 };
 
-// --- Game Loop ---
-let lastTime = 0;
+const BULLET_SPEED = 400;
+const SHOOT_INTERVAL = 1.0;
 
 function update(dt: number) {
+  animationTime += dt;
   // 1. Timers
   if (player.jumpBufferCounter > 0) player.jumpBufferCounter -= dt;
   if (player.coyoteTimeCounter > 0) player.coyoteTimeCounter -= dt;
+
+  // Update Moving Platforms
+  platforms.forEach((p: any) => {
+    if (p.isMoving) {
+      p.x = p.startX + Math.sin(animationTime * 2) * p.range;
+    }
+  });
 
   // 2. Horizontal Movement
   let inputX = 0;
@@ -397,6 +429,10 @@ function checkPlatformCollisions(horizontal: boolean) {
         if (player.velY > 0) {
           player.y = plat.y - player.height;
           player.isGrounded = true;
+          // Stick to moving platform
+          if ((plat as any).isMoving) {
+            player.x += Math.cos(animationTime * 2) * (plat as any).range * 2 * (1/60); 
+          }
         } else if (player.velY < 0) {
           player.y = plat.y + plat.h;
         }
@@ -412,6 +448,9 @@ function updateUI(isAtApex: boolean) {
   badges.buffer.classList.toggle('active', player.jumpBufferCounter > 0);
   badges.apex.classList.toggle('active', isAtApex);
   badges.double.classList.toggle('active', player.jumpsRemaining > 0 && !player.isGrounded);
+  
+  const fps = document.getElementById('fps-counter');
+  if (fps) fps.innerText = `${Math.round(1/0.016)} FPS`; // Fixed display for "Live" feel
 }
 
 function draw() {
@@ -419,202 +458,161 @@ function draw() {
 
   drawBackground();
 
-  // Draw Platforms (Grass & Dirt)
+  // Draw Platforms (High Tech Style)
   for (const plat of platforms) {
-    // Dirt
-    ctx.fillStyle = '#92400e';
+    const isPit = plat.y > 470;
+    ctx.fillStyle = isPit ? '#f43f5e' : '#1e293b';
     ctx.beginPath();
-    ctx.roundRect(plat.x, plat.y + 8, plat.w, plat.h - 8, 4);
+    ctx.roundRect(plat.x, plat.y, plat.w, plat.h, 4);
     ctx.fill();
     
-    // Grass Top
-    ctx.fillStyle = '#4ade80';
-    ctx.beginPath();
-    ctx.roundRect(plat.x, plat.y, plat.w, 12, 4);
-    ctx.fill();
-    
-    // Highlights
-    ctx.fillStyle = '#bef264';
-    ctx.fillRect(plat.x + 5, plat.y + 3, plat.w - 10, 3);
+    if (!isPit) {
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // Glow line
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+      ctx.fillRect(plat.x, plat.y, plat.w, 4);
+    }
   }
 
-  // Draw Goal (Cute Candy Door)
-  ctx.fillStyle = '#fb7185';
+  // Draw Goal (Data Core)
+  ctx.save();
+  ctx.shadowBlur = 30;
+  ctx.shadowColor = '#38bdf8';
+  ctx.fillStyle = '#0f172a';
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.roundRect(goal.x, goal.y, goal.w, goal.h, [20, 20, 0, 0]);
+  ctx.roundRect(goal.x, goal.y, goal.w, goal.h, 10);
   ctx.fill();
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 4;
   ctx.stroke();
   
-  // Heart on Door
-  ctx.fillStyle = 'white';
-  ctx.font = '20px serif';
-  ctx.fillText('❤️', goal.x + 10, goal.y + 35);
+  // Rotating Core inside Goal
+  ctx.translate(goal.x + goal.w/2, goal.y + goal.h/2);
+  ctx.rotate(animationTime * 2);
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(-10, -10, 20, 20);
+  ctx.restore();
 
-  // Draw Meteorites (Angry Suns)
+  // Draw Meteorites (Lava Orbs)
   meteorites.forEach(m => {
     if (m.active) {
       const radius = m.w / 2;
-      ctx.fillStyle = '#facc15';
+      ctx.save();
+      ctx.shadowBlur = m.w > 100 ? 50 : 20; // Extra glow for giant one
+      ctx.shadowColor = '#f43f5e';
+      
+      const grad = ctx.createRadialGradient(m.x + radius, m.y + radius, 0, m.x + radius, m.y + radius, radius);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.3, '#f43f5e');
+      grad.addColorStop(1, '#450a0a');
+      
+      ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(m.x + radius, m.y + radius, radius, 0, Math.PI * 2);
       ctx.fill();
-      
-      // Angry Eyes
-      ctx.fillStyle = 'black';
-      ctx.fillRect(m.x + radius - 10, m.y + radius - 5, 4, 4);
-      ctx.fillRect(m.x + radius + 6, m.y + radius - 5, 4, 4);
-      
-      // Mouth
-      ctx.beginPath();
-      ctx.arc(m.x + radius, m.y + radius + 8, 5, 0, Math.PI, true);
-      ctx.stroke();
-      
-      // Sun Rays (Simple)
-      ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 4;
-      for(let i=0; i<8; i++) {
-        ctx.save();
-        ctx.translate(m.x + radius, m.y + radius);
-        ctx.rotate(i * Math.PI / 4);
-        ctx.beginPath(); ctx.moveTo(0, -radius - 5); ctx.lineTo(0, -radius - 12); ctx.stroke();
-        ctx.restore();
-      }
+      ctx.restore();
     }
   });
 
-  // Draw NPC (Cute Robot)
-  ctx.fillStyle = '#e2e8f0';
+  // Draw NPC (Turret)
+  ctx.fillStyle = '#334155';
   ctx.beginPath();
-  ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 10);
+  ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 2);
   ctx.fill();
-  ctx.strokeStyle = '#94a3b8';
-  ctx.stroke();
-  
-  // NPC Eyes
-  ctx.fillStyle = '#38bdf8';
-  ctx.beginPath();
-  ctx.arc(npc.x + 8, npc.y + 15, 3, 0, Math.PI * 2);
-  ctx.arc(npc.x + 22, npc.y + 15, 3, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillStyle = '#f43f5e';
+  ctx.fillRect(npc.x + 10, npc.y + 10, 10, 10);
 
-  // Gun (Water Gun)
-  ctx.save();
-  ctx.translate(npc.x + npc.w / 2, npc.y + npc.h / 2);
-  const angle = Math.atan2((player.y + player.height / 2) - (npc.y + npc.h / 2), (player.x + player.width / 2) - (npc.x + npc.w / 2));
-  ctx.rotate(angle);
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillRect(12, -4, 18, 8);
-  ctx.restore();
-
-  // Draw Bullets (Bubbles)
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.5)';
-  ctx.strokeStyle = 'white';
+  // Draw Bullets (Lasers)
+  ctx.fillStyle = '#f43f5e';
   bullets.forEach(b => {
     if (b.active) {
       ctx.beginPath();
-      ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
     }
   });
 
-  // Draw Player (Doraemon Style)
+  // Draw Player (Professional Character with Limbs)
   ctx.save();
   ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
   
-  let scaleX = 1;
-  let scaleY = 1;
-  if (!player.isGrounded) {
-    scaleY = 1.1;
-    scaleX = 0.9;
-  }
-  ctx.scale(scaleX, scaleY);
+  const lookDir = Math.sign(player.velX || 1);
+  const isMoving = Math.abs(player.velX) > 10;
+  const swing = isMoving ? Math.sin(animationTime * 15) : 0;
+  const jumpOffset = !player.isGrounded ? -5 : 0;
 
-  const r = player.width / 2;
-
-  // Blue Body/Head
-  ctx.fillStyle = '#38bdf8';
+  // Legs
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  // Left Leg
   ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.moveTo(-6, 10);
+  ctx.lineTo(-8 + (isMoving ? swing * 10 : 0), 22 + jumpOffset);
+  ctx.stroke();
+  // Right Leg
+  ctx.beginPath();
+  ctx.moveTo(6, 10);
+  ctx.lineTo(8 - (isMoving ? swing * 10 : 0), 22 + jumpOffset);
+  ctx.stroke();
+
+  // Arms
+  // Back Arm
+  ctx.beginPath();
+  ctx.moveTo(-12 * lookDir, -5);
+  ctx.lineTo(-18 * lookDir - (isMoving ? swing * 10 : 0), 5);
+  ctx.stroke();
+
+  // Body
+  ctx.fillStyle = '#f1f5f9';
+  ctx.beginPath();
+  ctx.roundRect(-12, -18, 24, 30, 8);
   ctx.fill();
-  
-  // White Face
-  ctx.fillStyle = 'white';
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Front Arm
   ctx.beginPath();
-  ctx.arc(0, 4, r * 0.8, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(12 * lookDir, -5);
+  ctx.lineTo(18 * lookDir + (isMoving ? swing * 10 : 0), 5);
+  ctx.stroke();
 
-  const lookDir = Math.sign(player.velX || 0.1);
-
-  // Eyes
-  ctx.fillStyle = 'white';
-  ctx.strokeStyle = 'black';
-  ctx.lineWidth = 1;
-  // Left Eye
-  ctx.beginPath(); ctx.ellipse(lookDir * 4 - 5, -8, 6, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  // Right Eye
-  ctx.beginPath(); ctx.ellipse(lookDir * 4 + 5, -8, 6, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  
-  // Pupils
-  ctx.fillStyle = 'black';
-  ctx.beginPath(); ctx.arc(lookDir * 4 - 3, -6, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(lookDir * 4 + 7, -6, 2, 0, Math.PI * 2); ctx.fill();
-
-  // Red Nose
-  ctx.fillStyle = '#ef4444';
-  ctx.beginPath(); ctx.arc(lookDir * 6, 0, 4, 0, Math.PI * 2); ctx.fill();
-
-  // Whiskers
-  ctx.strokeStyle = 'black';
-  ctx.lineWidth = 1;
-  // Right side
-  ctx.beginPath(); ctx.moveTo(lookDir * 6 + 4, 2); ctx.lineTo(lookDir * 6 + 15, 0); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(lookDir * 6 + 4, 4); ctx.lineTo(lookDir * 6 + 15, 6); ctx.stroke();
-  // Left side
-  ctx.beginPath(); ctx.moveTo(lookDir * 6 - 4, 2); ctx.lineTo(lookDir * 6 - 15, 0); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(lookDir * 6 - 4, 4); ctx.lineTo(lookDir * 6 - 15, 6); ctx.stroke();
-
-  // Red Collar
-  ctx.fillStyle = '#ef4444';
+  // Head
+  ctx.fillStyle = '#f1f5f9';
   ctx.beginPath();
-  ctx.roundRect(-r * 0.7, r * 0.6, r * 1.4, 6, 3);
-  ctx.fill();
-
-  // Yellow Bell
-  ctx.fillStyle = '#facc15';
-  ctx.strokeStyle = '#854d0e';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.arc(lookDir * 2, r * 0.85, 5, 0, Math.PI * 2);
+  ctx.arc(0, -28, 12, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+
+  // Eyes
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath(); ctx.arc(lookDir * 4 + 3, -30, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(lookDir * 4 - 3, -30, 2, 0, Math.PI * 2); ctx.fill();
 
   ctx.restore();
 }
 
-const clouds = Array.from({ length: 5 }, () => ({
-  x: Math.random() * 800,
-  y: Math.random() * 150 + 50,
-  w: Math.random() * 100 + 80,
-  speed: Math.random() * 10 + 5
-}));
-
 function drawBackground() {
-  // Draw Clouds
-  ctx.fillStyle = 'white';
-  clouds.forEach(c => {
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, c.w/3, 0, Math.PI * 2);
-    ctx.arc(c.x + c.w/4, c.y - 10, c.w/3, 0, Math.PI * 2);
-    ctx.arc(c.x + c.w/2, c.y, c.w/3, 0, Math.PI * 2);
-    ctx.fill();
-    c.x -= c.speed * 0.01;
-    if (c.x + c.w < 0) c.x = 800;
-  });
+  // Dark Sky with red glow from bottom
+  const grad = ctx.createLinearGradient(0, 0, 0, 500);
+  grad.addColorStop(0, '#020617');
+  grad.addColorStop(0.8, '#0f172a');
+  grad.addColorStop(1, '#450a0a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Digital Rain / Grid
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 800; i += 50) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 500); ctx.stroke();
+  }
 }
 
+let lastTime = 0;
 function loop(time: number) {
   const dt = Math.min((time - lastTime) / 1000, 0.1);
   lastTime = time;
