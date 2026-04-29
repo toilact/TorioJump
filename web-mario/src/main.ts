@@ -417,111 +417,167 @@ function updateUI(isAtApex: boolean) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw Platforms
-  ctx.fillStyle = '#475569';
+  drawBackground();
+
+  // Draw Platforms with Gradients
   for (const plat of platforms) {
-    ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
-    // Bevel
-    ctx.fillStyle = '#64748b';
-    ctx.fillRect(plat.x, plat.y, plat.w, 4);
-    ctx.fillStyle = '#475569';
+    const gradient = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.h);
+    gradient.addColorStop(0, '#334155');
+    gradient.addColorStop(1, '#1e293b');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.roundRect(plat.x, plat.y, plat.w, plat.h, 6);
+    ctx.fill();
+    
+    // Top light edge
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect(plat.x + 2, plat.y + 2, plat.w - 4, 2);
+    
+    // Border
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(plat.x, plat.y, plat.w, plat.h);
   }
 
-  // Draw Goal (Yellow Door)
+  // Draw Goal (Yellow Door - Glowing)
+  ctx.save();
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = '#fbbf24';
   ctx.fillStyle = '#fbbf24';
-  ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
-  // Door frame
-  ctx.strokeStyle = '#f59e0b';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(goal.x, goal.y, goal.w, goal.h);
-  // Knob
-  ctx.fillStyle = '#92400e';
   ctx.beginPath();
-  ctx.arc(goal.x + goal.w - 10, goal.y + goal.h / 2, 3, 0, Math.PI * 2);
+  ctx.roundRect(goal.x, goal.y, goal.w, goal.h, [10, 10, 0, 0]);
   ctx.fill();
+  ctx.restore();
+  
+  // Door Detail
+  ctx.strokeStyle = '#92400e';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(goal.x + 5, goal.y + 5, goal.w - 10, goal.h - 5);
 
-  // Draw Meteorites
+  // Draw Meteorites (Circular & Glowing)
   meteorites.forEach(m => {
     if (m.active) {
-      ctx.beginPath();
-      // Draw as circle
       const radius = m.w / 2;
+      const grad = ctx.createRadialGradient(m.x + radius, m.y + radius, 0, m.x + radius, m.y + radius, radius);
+      grad.addColorStop(0, '#94a3b8');
+      grad.addColorStop(0.8, '#475569');
+      grad.addColorStop(1, '#ef4444');
+      
+      ctx.save();
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ef4444';
+      ctx.fillStyle = grad;
+      ctx.beginPath();
       ctx.arc(m.x + radius, m.y + radius, radius, 0, Math.PI * 2);
-      ctx.fillStyle = '#475569';
       ctx.fill();
-      // Add texture/crater
-      ctx.fillStyle = '#334155';
-      ctx.beginPath();
-      ctx.arc(m.x + radius * 0.6, m.y + radius * 0.6, radius * 0.2, 0, Math.PI * 2);
-      ctx.fill();
-      // Glow/Fire effect
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(m.x + radius, m.y - 5, radius * 0.8, 0, Math.PI, true);
-      ctx.fill();
+      ctx.restore();
     }
   });
 
-  // Draw NPC
-  ctx.fillStyle = '#1e293b';
+  // Draw NPC (Cyber Style)
+  ctx.fillStyle = '#0f172a';
   ctx.beginPath();
-  ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 4);
+  ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 8);
   ctx.fill();
-  // Eyes (Evil)
-  ctx.fillStyle = '#ef4444';
-  ctx.fillRect(npc.x + 5, npc.y + 10, 5, 5);
-  ctx.fillRect(npc.x + 20, npc.y + 10, 5, 5);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // NPC Eyes
+  ctx.save();
+  ctx.fillStyle = '#f43f5e';
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = '#f43f5e';
+  ctx.fillRect(npc.x + 6, npc.y + 12, 6, 4);
+  ctx.fillRect(npc.x + 18, npc.y + 12, 6, 4);
+  ctx.restore();
+
   // Gun
-  ctx.fillStyle = '#334155';
   ctx.save();
   ctx.translate(npc.x + npc.w / 2, npc.y + npc.h / 2);
   const angle = Math.atan2((player.y + player.height / 2) - (npc.y + npc.h / 2), (player.x + player.width / 2) - (npc.x + npc.w / 2));
   ctx.rotate(angle);
-  ctx.fillRect(10, -4, 20, 8);
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(12, -5, 22, 10);
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(30, -3, 6, 6);
   ctx.restore();
 
-  // Draw Bullets
+  // Draw Bullets (Glowing)
+  ctx.save();
   ctx.fillStyle = '#fbbf24';
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = '#fbbf24';
   bullets.forEach(b => {
     if (b.active) {
       ctx.beginPath();
-      ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
       ctx.fill();
     }
   });
+  ctx.restore();
 
   // Draw Player
   ctx.save();
   ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
   
-  // Squash and stretch effect (Simple)
   let scaleX = 1;
   let scaleY = 1;
   if (!player.isGrounded) {
-    scaleY = 1.1;
-    scaleX = 0.9;
+    scaleY = 1.15;
+    scaleX = 0.85;
   }
   ctx.scale(scaleX, scaleY);
 
-  // Character Body
-  const gradient = ctx.createLinearGradient(-16, -24, 16, 24);
-  gradient.addColorStop(0, '#f87171');
-  gradient.addColorStop(1, '#ef4444');
-  ctx.fillStyle = gradient;
+  const playerGrad = ctx.createLinearGradient(-16, -24, 16, 24);
+  playerGrad.addColorStop(0, '#38bdf8');
+  playerGrad.addColorStop(1, '#818cf8');
   
-  // Rounded rect for player
-  const r = 8;
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = '#38bdf8';
+  ctx.fillStyle = playerGrad;
   ctx.beginPath();
-  ctx.roundRect(-player.width/2, -player.height/2, player.width, player.height, r);
+  ctx.roundRect(-player.width/2, -player.height/2, player.width, player.height, 10);
   ctx.fill();
+  ctx.shadowBlur = 0;
   
-  // Eyes
+  // Player Eyes (Expressive)
   ctx.fillStyle = 'white';
-  const eyeOffset = Math.sign(player.velX || 1) * 5;
-  ctx.fillRect(eyeOffset + 2, -10, 6, 6);
-  ctx.fillRect(eyeOffset - 8, -10, 6, 6);
+  const lookDir = Math.sign(player.velX || 0.1);
+  ctx.fillRect(lookDir * 6 + 2, -12, 6, 8);
+  ctx.fillRect(lookDir * 6 - 8, -12, 6, 8);
 
   ctx.restore();
+}
+
+const stars = Array.from({ length: 50 }, () => ({
+  x: Math.random() * 800,
+  y: Math.random() * 500,
+  size: Math.random() * 2,
+  speed: Math.random() * 20 + 10
+}));
+
+function drawBackground() {
+  // Static grid
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 800; i += 40) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 500); ctx.stroke();
+  }
+  for (let i = 0; i < 500; i += 40) {
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(800, i); ctx.stroke();
+  }
+
+  // Floating stars
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+  stars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    ctx.fill();
+    s.x -= s.speed * 0.01;
+    if (s.x < 0) s.x = 800;
+  });
 }
 
 function loop(time: number) {
