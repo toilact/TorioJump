@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mario Arcade Feel Demo</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="login-screen" class="login-screen">
+        <div class="login-content">
+          <h1>Chào mừng xạ thủ</h1>
+          <p>Nhập tên của bạn để bắt đầu thử thách</p>
+          <input type="text" id="player-name-input" placeholder="Tên của bạn..." maxlength="15" />
+          <button id="start-game-btn">BẮT ĐẦU</button>
+        </div>
+      </div>
+
+      <h1>Mario Controller Web</h1>
+      <p class="subtitle">A highly responsive 2D physics demo</p>
+      
+      <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        
+        <div class="ui-overlay">
+          <div id="grounded-badge" class="debug-badge">Grounded</div>
+          <div id="coyote-badge" class="debug-badge">Coyote Time</div>
+          <div id="buffer-badge" class="debug-badge">Jump Buffered</div>
+          <div id="double-jump-badge" class="debug-badge">Double Jump Avail.</div>
+          <div id="apex-badge" class="debug-badge">Jump Apex</div>
+        </div>
+        
+        <div id="message-overlay" class="message-overlay hidden">
+          <span id="message-text"></span>
+        </div>
+        
+        <div class="controls-hint">
+          <kbd>A</kbd> <kbd>D</kbd> or <kbd>←</kbd> <kbd>→</kbd> to Move &bull; <kbd>Space</kbd> or <kbd>W</kbd> to Jump
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
