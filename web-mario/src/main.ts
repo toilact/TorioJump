@@ -520,46 +520,75 @@ function draw() {
     }
   });
 
-  // Draw Player (Cute Slime)
+  // Draw Player (Doraemon Style)
   ctx.save();
   ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
   
   let scaleX = 1;
   let scaleY = 1;
   if (!player.isGrounded) {
-    scaleY = 1.2;
-    scaleX = 0.8;
+    scaleY = 1.1;
+    scaleX = 0.9;
   }
   ctx.scale(scaleX, scaleY);
 
-  // Body
-  ctx.fillStyle = '#fb7185';
+  const r = player.width / 2;
+
+  // Blue Body/Head
+  ctx.fillStyle = '#38bdf8';
   ctx.beginPath();
-  ctx.ellipse(0, 0, player.width/2, player.height/2, 0, 0, Math.PI * 2);
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
   ctx.fill();
   
-  // Highlight
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  // White Face
+  ctx.fillStyle = 'white';
   ctx.beginPath();
-  ctx.ellipse(-5, -10, 6, 4, Math.PI/4, 0, Math.PI * 2);
+  ctx.arc(0, 4, r * 0.8, 0, Math.PI * 2);
   ctx.fill();
+
+  const lookDir = Math.sign(player.velX || 0.1);
 
   // Eyes
-  ctx.fillStyle = 'black';
-  const lookDir = Math.sign(player.velX || 0.1);
-  ctx.beginPath(); ctx.arc(lookDir * 6 + 4, -4, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(lookDir * 6 - 8, -4, 3, 0, Math.PI * 2); ctx.fill();
-  
-  // Rosy Cheeks
-  ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
-  ctx.beginPath(); ctx.arc(lookDir * 6 + 10, 2, 4, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(lookDir * 6 - 14, 2, 4, 0, Math.PI * 2); ctx.fill();
-
-  // Smile
+  ctx.fillStyle = 'white';
   ctx.strokeStyle = 'black';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1;
+  // Left Eye
+  ctx.beginPath(); ctx.ellipse(lookDir * 4 - 5, -8, 6, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // Right Eye
+  ctx.beginPath(); ctx.ellipse(lookDir * 4 + 5, -8, 6, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  
+  // Pupils
+  ctx.fillStyle = 'black';
+  ctx.beginPath(); ctx.arc(lookDir * 4 - 3, -6, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(lookDir * 4 + 7, -6, 2, 0, Math.PI * 2); ctx.fill();
+
+  // Red Nose
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath(); ctx.arc(lookDir * 6, 0, 4, 0, Math.PI * 2); ctx.fill();
+
+  // Whiskers
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 1;
+  // Right side
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 + 4, 2); ctx.lineTo(lookDir * 6 + 15, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 + 4, 4); ctx.lineTo(lookDir * 6 + 15, 6); ctx.stroke();
+  // Left side
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 - 4, 2); ctx.lineTo(lookDir * 6 - 15, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(lookDir * 6 - 4, 4); ctx.lineTo(lookDir * 6 - 15, 6); ctx.stroke();
+
+  // Red Collar
+  ctx.fillStyle = '#ef4444';
   ctx.beginPath();
-  ctx.arc(lookDir * 6 - 2, 2, 4, 0.2 * Math.PI, 0.8 * Math.PI);
+  ctx.roundRect(-r * 0.7, r * 0.6, r * 1.4, 6, 3);
+  ctx.fill();
+
+  // Yellow Bell
+  ctx.fillStyle = '#facc15';
+  ctx.strokeStyle = '#854d0e';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(lookDir * 2, r * 0.85, 5, 0, Math.PI * 2);
+  ctx.fill();
   ctx.stroke();
 
   ctx.restore();
