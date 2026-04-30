@@ -63,6 +63,7 @@ let messageTimeout: number | undefined;
 
 let deathCount = parseInt(localStorage.getItem('torio_deaths') || '0');
 let isGunEvolved = false;
+let gunEvolutionLevel = 0;
 
 const dragon = { 
   x: 600, y: -200, active: true, phase: 'chase' as 'chase' | 'snap', 
@@ -204,8 +205,8 @@ function update(dt: number) {
   }
 
   if (!isFakeWinning && player.x < goal.x + goal.w && player.x + player.width > goal.x && player.y < goal.y + goal.h && player.y + player.height > goal.y) {
-    isFakeWinning = true; isGunEvolved = true; fakeWinTimer = 0; 
-    showMessage("GUN EVOLVED! 🔫🔥", 3000);
+    isFakeWinning = true; isGunEvolved = true; gunEvolutionLevel++; fakeWinTimer = 0; 
+    showMessage(`GUN EVOLVED LVL ${gunEvolutionLevel}! 🔫🔥`, 3000);
   }
 
   if (isFakeWinning) {
@@ -276,7 +277,8 @@ function update(dt: number) {
         b.vy = (b.vy / vDist) * BULLET_SPEED;
       }
       b.x += b.vx * dt; b.y += b.vy * dt;
-      if (player.x < b.x + 8 && player.x + player.width > b.x - 8 && player.y < b.y + 8 && player.y + player.height > b.y - 8) {
+      const bRadius = 8 + gunEvolutionLevel * 4;
+      if (player.x < b.x + bRadius && player.x + player.width > b.x - bRadius && player.y < b.y + bRadius && player.y + player.height > b.y - bRadius) {
         deathCount++; updateDeathCount();
         playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); b.active = false;
       }
@@ -324,7 +326,7 @@ function draw() {
     }
   });
   ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 2); ctx.fill(); ctx.fillStyle = '#f43f5e'; ctx.fillRect(npc.x + 10, npc.y + 10, 10, 10);
-  ctx.fillStyle = '#f43f5e'; bullets.forEach(b => { if (b.active) { ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill(); } });
+  ctx.fillStyle = '#f43f5e'; bullets.forEach(b => { if (b.active) { ctx.beginPath(); ctx.arc(b.x, b.y, 4 + gunEvolutionLevel * 2, 0, Math.PI * 2); ctx.fill(); } });
 
   // Draw Player (Doraemon with Professional Limbs)
   ctx.save();
