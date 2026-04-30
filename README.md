@@ -1,4 +1,4 @@
-# 🍄 TorioJump - Hell Mode: Doraemon vs Pikachu
+# 🍄 TorioJump - Hell Mode: Toraemon vs Ngankhachu
 
 ![Game Cover](docs/images/cover.png)
 
@@ -12,17 +12,17 @@
 
 ## 🕹️ Tính năng "Địa Ngục" (Hell Mode Features)
 
-### 🐱 Doraemon & Pikachu Showdown
-- **Player (Doraemon)**: Được trang bị **Đại bác không khí (Air Cannon)**. Bạn có thể bắn luồng khí để triệt tiêu đạn của đối thủ.
-- **Boss (Pikachu)**: Một xạ thủ điện quang tung ra những **Quả cầu sấm sét vàng (Golden Thunderballs)** đầy uy lực.
+### 🐱 Toraemon & Ngankhachu Showdown
+- **Player (Toraemon)**: Được trang bị **Đại bác không khí (Air Cannon)**. Bạn có thể bắn luồng khí để triệt tiêu đạn của đối thủ.
+- **Boss (Ngankhachu)**: Một xạ thủ điện quang tung ra những **Quả cầu sấm sét vàng (Golden Thunderballs)** đầy uy lực.
 
 ### 🐲 Shenron - Sự truy đuổi vĩnh viễn
 - **Rồng Thần Shenron**: Xuất hiện ngay từ đầu và **liên tục truy đuổi** người chơi. Chỉ cần một cú chạm nhẹ từ Rồng Thần, bạn sẽ phải bắt đầu lại.
 - **Volcano Eruptions**: Cứ mỗi 7 giây, nham thạch sẽ phun trào từ lòng đất, buộc bạn phải liên tục di chuyển và nhảy né.
 
 ### ⚙️ Cơ chế tiến hóa súng (Gun Evolution)
-- **Exponential Growth**: Mỗi lần bạn chạm vào Cửa Vàng, đạn của Pikachu sẽ **to lên theo cấp số nhân** và bắn nhanh hơn.
-- **Homing Bullets**: Ở cấp độ cao, đạn của Pikachu sẽ tự động xoay hướng và đuổi theo bạn cho đến khi trúng đích.
+- **Exponential Growth**: Mỗi lần bạn chạm vào Cửa Vàng, đạn của Ngankhachu sẽ **to lên theo cấp số nhân** và bắn nhanh hơn.
+- **Homing Bullets**: Ở cấp độ cao, đạn của Ngankhachu sẽ tự động xoay hướng và đuổi theo bạn cho đến khi trúng đích.
 
 ---
 
@@ -47,7 +47,7 @@
 
 ## 🛠️ Công nghệ & Đồ họa
 - **TypeScript & Vite**: Đảm bảo hiệu suất mượt mà trên nền tảng Web.
-- **HTML5 Canvas API**: Toàn bộ nhân vật (Doraemon, Pikachu, Shenron) được vẽ thủ công bằng code Canvas, mang lại sự linh hoạt trong hoạt ảnh.
+- **HTML5 Canvas API**: Toàn bộ nhân vật (Toraemon, Ngankhachu, Shenron) được vẽ thủ công bằng code Canvas, mang lại sự linh hoạt trong hoạt ảnh.
 - **Web Audio API**: Âm thanh và nhạc nền 8-bit được tổng hợp trực tiếp, không cần file audio rời.
 - **Glassmorphism UI**: Giao diện đăng nhập và HUD hiện đại, mờ ảo và rực rỡ.
 
@@ -65,4 +65,4 @@
 ## ✍️ Tác giả
 Dự án được thực hiện bởi **toilact** với mục tiêu mang lại sự "ức chế" vui vẻ và những giây phút giải trí kịch tính nhất.
 
-**Bạn đã sẵn sàng đối đầu với Pikachu và Rồng Thần chưa? Đừng để bị chê là "Gà Quá" nhé!** 🎮🔥💀
+**Bạn đã sẵn sàng đối đầu với Ngankhachu và Rồng Thần chưa? Đừng để bị chê là "Gà Quá" nhé!** 🎮🔥💀
