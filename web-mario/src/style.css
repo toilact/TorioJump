@@ -152,15 +152,27 @@ canvas {
 }
 
 #message-text {
-  font-size: 4rem;
+  font-size: 5rem;
   font-weight: 900;
   text-align: center;
-  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 10px 30px rgba(0,0,0,0.8));
+  background: linear-gradient(
+    to right, 
+    #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: rainbow 1.5s linear infinite, shake 0.1s infinite;
+  display: block;
 }
 
 #message-text.huge {
-  font-size: 30vh;
-  animation: shake 0.1s infinite;
+  font-size: 15vw;
+}
+
+@keyframes rainbow {
+  to { background-position: 200% center; }
 }
 
 @keyframes shake {

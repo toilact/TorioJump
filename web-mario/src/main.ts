@@ -61,6 +61,12 @@ let animationTime = 0;
 let lastTime = 0;
 let messageTimeout: number | undefined;
 
+const dragon = { 
+  x: 0, y: -600, active: false, targetY: 0, phase: 'descend' as 'descend' | 'snap', 
+  segments: [] as {x: number, y: number}[],
+  biteTimer: 0 
+};
+
 // --- Audio ---
 const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
 function playJumpSound() {
@@ -192,7 +198,31 @@ function update(dt: number) {
 
   if (isFakeWinning) {
     fakeWinTimer += dt; player.velX = 0; player.velY = 0;
-    if (fakeWinTimer >= 3 && meteorites.filter(m => m.w > 100).length === 0) meteorites.push({ x: player.x - 80, y: -400, w: 200, h: 200, active: true });
+    if (fakeWinTimer >= 1.5 && !dragon.active) {
+      dragon.active = true; dragon.x = player.x; dragon.y = -600; dragon.phase = 'descend';
+      dragon.segments = Array.from({length: 20}, (_, i) => ({x: dragon.x, y: dragon.y - i * 30}));
+    }
+    
+    if (dragon.active) {
+      if (dragon.phase === 'descend') {
+        dragon.y += 150 * dt;
+        if (dragon.y > player.y - 200) dragon.phase = 'snap';
+      } else {
+        dragon.y += 800 * dt;
+        if (dragon.y > player.y - 30) {
+          playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); 
+          dragon.active = false; isFakeWinning = false;
+        }
+      }
+      dragon.segments[0] = {x: dragon.x, y: dragon.y};
+      for(let i = 1; i < dragon.segments.length; i++) {
+        const dx = dragon.segments[i-1].x - dragon.segments[i].x;
+        const dy = dragon.segments[i-1].y - dragon.segments[i].y;
+        dragon.segments[i].x += dx * 0.2;
+        dragon.segments[i].y += dy * 0.2;
+        dragon.segments[i].x += Math.sin(animationTime * 5 + i) * 2;
+      }
+    }
   }
 
   trollTriggers.forEach(t => { if (!t.spawned && player.x > t.x) { t.spawned = true; meteorites.push({ x: player.x, y: -100, w: 40, h: 40, active: true }); } });
@@ -321,6 +351,53 @@ function draw() {
   ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.roundRect(-r * 0.7, r * 0.6, r * 1.4, 6, 3); ctx.fill();
   ctx.fillStyle = '#facc15'; ctx.strokeStyle = '#854d0e'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.arc(lookDir * 2, r * 0.85, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  ctx.restore();
+
+  if (dragon.active) drawDragon();
+}
+
+function drawDragon() {
+  ctx.save();
+  // Draw Body Segments
+  ctx.lineWidth = 40; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#166534'; // Dark Green
+  ctx.beginPath();
+  ctx.moveTo(dragon.segments[0].x, dragon.segments[0].y);
+  dragon.segments.forEach(s => ctx.lineTo(s.x, s.y));
+  ctx.stroke();
+
+  // Spikes on back
+  ctx.strokeStyle = '#14532d'; ctx.lineWidth = 20;
+  ctx.beginPath();
+  dragon.segments.forEach((s, i) => { if (i % 2 === 0) ctx.lineTo(s.x + Math.cos(i) * 30, s.y); });
+  ctx.stroke();
+
+  // Dragon Head
+  const head = dragon.segments[0];
+  ctx.translate(head.x, head.y);
+  ctx.rotate(Math.PI / 2); // Face down
+
+  // Head Shape
+  ctx.fillStyle = '#16a34a'; // Brighter Green
+  ctx.beginPath();
+  ctx.moveTo(-30, 0); ctx.lineTo(30, 0); ctx.lineTo(40, 60); ctx.lineTo(-40, 60); ctx.closePath();
+  ctx.fill();
+
+  // Eyes (Glowing Red)
+  ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 15; ctx.shadowColor = 'red';
+  ctx.beginPath(); ctx.arc(-15, 30, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(15, 30, 8, 0, Math.PI * 2); ctx.fill();
+
+  // Teeth
+  ctx.fillStyle = 'white'; ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.moveTo(-30, 60); ctx.lineTo(-20, 45); ctx.lineTo(-10, 60); 
+  ctx.lineTo(0, 45); ctx.lineTo(10, 60); ctx.lineTo(20, 45); ctx.lineTo(30, 60); ctx.fill();
+
+  // Horns
+  ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-40, -30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(40, -30); ctx.stroke();
 
   ctx.restore();
 }
