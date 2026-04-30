@@ -164,6 +164,14 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyB') shootAirCannon();
 });
+
+window.addEventListener('mousedown', (e) => {
+  if (!gameStarted) return;
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  shootAirCannon(mouseX, mouseY);
+});
 window.addEventListener('keyup', (e) => {
   keys[e.code] = false;
   if (['Space', 'KeyW', 'ArrowUp'].includes(e.code)) player.jumpReleased = true;
@@ -183,14 +191,29 @@ function executeJump(isDoubleJump: boolean) {
   player.velY = isDoubleJump ? -config.jumpForce * 1.2 : -config.jumpForce;
 }
 
-function shootAirCannon() {
+function shootAirCannon(targetX?: number, targetY?: number) {
   playAirCannonSound();
-  const lookDir = Math.sign(player.velX || 1);
+  let vx, vy;
+  const startX = player.x + player.width / 2;
+  const startY = player.y + player.height / 2;
+
+  if (targetX !== undefined && targetY !== undefined) {
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    vx = (dx / dist) * 800;
+    vy = (dy / dist) * 800;
+  } else {
+    const lookDir = Math.sign(player.velX || 1);
+    vx = lookDir * 800;
+    vy = 0;
+  }
+
   airBullets.push({
-    x: player.x + player.width / 2 + 20 * lookDir,
-    y: player.y + player.height / 2,
-    vx: lookDir * 800,
-    vy: 0,
+    x: startX,
+    y: startY,
+    vx: vx,
+    vy: vy,
     active: true
   });
 }
@@ -335,7 +358,8 @@ function update(dt: number) {
   airBullets.forEach(ab => {
     if (ab.active) {
       ab.x += ab.vx * dt;
-      if (ab.x < -50 || ab.x > canvas.width + 50) ab.active = false;
+      ab.y += ab.vy * dt;
+      if (ab.x < -100 || ab.x > canvas.width + 100 || ab.y < -100 || ab.y > canvas.height + 100) ab.active = false;
     }
   });
 
