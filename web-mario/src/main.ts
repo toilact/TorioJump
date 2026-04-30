@@ -325,8 +325,27 @@ function draw() {
       ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(m.x + radius, m.y + radius, radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
   });
-  ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(npc.x, npc.y, npc.w, npc.h, 2); ctx.fill(); ctx.fillStyle = '#f43f5e'; ctx.fillRect(npc.x + 10, npc.y + 10, 10, 10);
-  ctx.fillStyle = '#f43f5e'; bullets.forEach(b => { if (b.active) { ctx.beginPath(); ctx.arc(b.x, b.y, 4 + gunEvolutionLevel * 2, 0, Math.PI * 2); ctx.fill(); } });
+  
+  drawPikachu();
+
+  ctx.fillStyle = '#facc15'; // Golden Yellow
+  bullets.forEach(b => { 
+    if (b.active) { 
+      const r = 4 + gunEvolutionLevel * 2;
+      ctx.save();
+      ctx.shadowBlur = 15; ctx.shadowColor = '#fef08a';
+      ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill(); 
+      // Add sparks
+      ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
+      for(let i=0; i<3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(b.x + (Math.random()-0.5)*r*2, b.y + (Math.random()-0.5)*r*2);
+        ctx.lineTo(b.x + (Math.random()-0.5)*r*4, b.y + (Math.random()-0.5)*r*4);
+        ctx.stroke();
+      }
+      ctx.restore();
+    } 
+  });
 
   // Draw Player (Doraemon with Professional Limbs)
   ctx.save();
@@ -461,6 +480,49 @@ function drawBackground() {
   ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)'; ctx.lineWidth = 1;
   for (let i = 0; i < 1200; i += 50) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 800); ctx.stroke(); }
+}
+
+function drawPikachu() {
+  ctx.save();
+  ctx.translate(npc.x + npc.w / 2, npc.y + npc.h / 2);
+  
+  // Body (Yellow)
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath(); ctx.ellipse(0, 10, 15, 20, 0, 0, Math.PI * 2); ctx.fill();
+  
+  // Head (Yellow)
+  ctx.beginPath(); ctx.arc(0, -10, 15, 0, Math.PI * 2); ctx.fill();
+  
+  // Ears
+  ctx.lineWidth = 4; ctx.strokeStyle = '#facc15';
+  // Left
+  ctx.save(); ctx.rotate(-0.3);
+  ctx.beginPath(); ctx.ellipse(-8, -25, 4, 12, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'black'; ctx.beginPath(); ctx.ellipse(-8, -32, 4, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // Right
+  ctx.save(); ctx.rotate(0.3);
+  ctx.beginPath(); ctx.ellipse(8, -25, 4, 12, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'black'; ctx.beginPath(); ctx.ellipse(8, -32, 4, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // Cheeks (Red)
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath(); ctx.arc(-10, -5, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10, -5, 4, 0, Math.PI * 2); ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = 'black';
+  ctx.beginPath(); ctx.arc(-6, -12, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -12, 2, 0, Math.PI * 2); ctx.fill();
+
+  // Tail (Lightning bolt)
+  ctx.strokeStyle = '#facc15'; ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(-15, 15); ctx.lineTo(-30, 5); ctx.lineTo(-25, 0); ctx.lineTo(-40, -15);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 function loop(time: number) {
