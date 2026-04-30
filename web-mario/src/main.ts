@@ -61,6 +61,8 @@ let animationTime = 0;
 let lastTime = 0;
 let messageTimeout: number | undefined;
 
+const airBullets: {x: number, y: number, vx: number, vy: number, active: boolean}[] = [];
+
 let deathCount = parseInt(localStorage.getItem('torio_deaths') || '0');
 let bestGoalScore = parseInt(localStorage.getItem('torio_best_goal') || '0');
 let isGunEvolved = false;
@@ -88,7 +90,17 @@ function playDeathSound() {
   osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
   osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.3);
   gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.connect(audioCtx.destination);
-  osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+  osc.connect(gain);    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playAirCannonSound() {
+  const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+  osc.type = 'sine'; osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.2);
 }
 
 function playBackgroundMusic() {
@@ -150,6 +162,7 @@ window.addEventListener('keydown', (e) => {
     player.jumpBufferCounter = config.jumpBufferTime;
     if (!player.isGrounded && player.jumpsRemaining > 0) executeJump(true);
   }
+  if (e.code === 'KeyB') shootAirCannon();
 });
 window.addEventListener('keyup', (e) => {
   keys[e.code] = false;
@@ -168,6 +181,18 @@ function executeJump(isDoubleJump: boolean) {
   player.isJumping = true; player.jumpBufferCounter = 0;
   player.coyoteTimeCounter = 0; player.jumpReleased = false; player.jumpsRemaining--;
   player.velY = isDoubleJump ? -config.jumpForce * 1.2 : -config.jumpForce;
+}
+
+function shootAirCannon() {
+  playAirCannonSound();
+  const lookDir = Math.sign(player.velX || 1);
+  airBullets.push({
+    x: player.x + player.width / 2 + 20 * lookDir,
+    y: player.y + player.height / 2,
+    vx: lookDir * 800,
+    vy: 0,
+    active: true
+  });
 }
 
 function checkPlatformCollisions(horizontal: boolean) {
@@ -296,7 +321,21 @@ function update(dt: number) {
         deathCount++; updateDeathCount();
         playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); b.active = false;
       }
+      // Collision with Air Bullets
+      airBullets.forEach(ab => {
+        if (ab.active) {
+          const dx = ab.x - b.x; const dy = ab.y - b.y;
+          if (Math.sqrt(dx*dx + dy*dy) < bRadius + 15) { b.active = false; ab.active = false; }
+        }
+      });
       if (b.x < -100 || b.x > canvas.width + 100 || b.y < -100 || b.y > canvas.height + 100) b.active = false;
+    }
+  });
+
+  airBullets.forEach(ab => {
+    if (ab.active) {
+      ab.x += ab.vx * dt;
+      if (ab.x < -50 || ab.x > canvas.width + 50) ab.active = false;
     }
   });
 
@@ -339,7 +378,7 @@ function update(dt: number) {
 
 function respawn() {
   player.x = 50; player.y = 700; player.velX = 0; player.velY = 0;
-  trollTriggers.forEach(t => t.spawned = false); meteorites.length = 0; bullets.length = 0; npc.shootTimer = SHOOT_INTERVAL;
+  trollTriggers.forEach(t => t.spawned = false); meteorites.length = 0; bullets.length = 0; airBullets.length = 0; npc.shootTimer = SHOOT_INTERVAL;
   dragon.x = 600; dragon.y = -200; dragon.segments.forEach(s => { s.x = 600; s.y = -200; });
   // gunEvolutionLevel is NOT reset as per request
 }
@@ -440,6 +479,17 @@ function draw() {
   // Front Arm
   ctx.beginPath(); ctx.moveTo(12 * lookDir, -5); ctx.lineTo(18 * lookDir + (isMov ? swing * 10 : 0), 5); ctx.stroke();
 
+  // Air Cannon (Cannon on hand)
+  ctx.save();
+  ctx.translate(18 * lookDir + (isMov ? swing * 10 : 0), 5);
+  ctx.rotate(lookDir === 1 ? 0 : Math.PI);
+  ctx.fillStyle = '#334155'; // Dark Grey
+  ctx.beginPath();
+  ctx.roundRect(0, -10, 25, 20, 5); ctx.fill();
+  ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(25, 0, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
   // Red Nose
   ctx.fillStyle = '#ef4444';
   ctx.beginPath(); ctx.arc(lookDir * 6, 0, 4, 0, Math.PI * 2); ctx.fill();
@@ -465,6 +515,15 @@ function draw() {
   ctx.beginPath(); ctx.arc(lookDir * 2, r * 0.85, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
   ctx.restore();
+
+  // Draw Air Bullets
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  airBullets.forEach(ab => {
+    if (ab.active) {
+      ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = 'white';
+      ctx.beginPath(); ctx.arc(ab.x, ab.y, 15, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+  });
 
   if (dragon.active) drawDragon();
 }
