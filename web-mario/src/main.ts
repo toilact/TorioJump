@@ -62,6 +62,7 @@ let lastTime = 0;
 let messageTimeout: number | undefined;
 
 let deathCount = parseInt(localStorage.getItem('torio_deaths') || '0');
+let bestGoalScore = parseInt(localStorage.getItem('torio_best_goal') || '0');
 let isGunEvolved = false;
 let gunEvolutionLevel = 0;
 
@@ -109,7 +110,13 @@ function updateDeathCount() {
   if (el) el.innerText = deathCount.toString();
   localStorage.setItem('torio_deaths', deathCount.toString());
 }
+function updateBestScore() {
+  const el = document.getElementById('best-goal');
+  if (el) el.innerText = bestGoalScore.toString();
+  localStorage.setItem('torio_best_goal', bestGoalScore.toString());
+}
 updateDeathCount();
+updateBestScore();
 
 // --- UI & Logic ---
 const messageOverlay = document.getElementById('message-overlay')!;
@@ -206,7 +213,11 @@ function update(dt: number) {
 
   if (!isFakeWinning && player.x < goal.x + goal.w && player.x + player.width > goal.x && player.y < goal.y + goal.h && player.y + player.height > goal.y) {
     isFakeWinning = true; isGunEvolved = true; gunEvolutionLevel++; fakeWinTimer = 0; 
-    showMessage(`GUN EVOLVED LVL ${gunEvolutionLevel}! 🔫🔥`, 3000);
+    if (gunEvolutionLevel > bestGoalScore) {
+      bestGoalScore = gunEvolutionLevel;
+      updateBestScore();
+    }
+    showMessage(`GUN EVOLVED LVL ${gunEvolutionLevel}! ⚡️⚡️`, 3000);
   }
 
   if (isFakeWinning) {
@@ -277,7 +288,7 @@ function update(dt: number) {
         b.vy = (b.vy / vDist) * BULLET_SPEED;
       }
       b.x += b.vx * dt; b.y += b.vy * dt;
-      const bRadius = 8 + gunEvolutionLevel * 4;
+      const bRadius = 8 * Math.pow(1.5, gunEvolutionLevel);
       if (player.x < b.x + bRadius && player.x + player.width > b.x - bRadius && player.y < b.y + bRadius && player.y + player.height > b.y - bRadius) {
         deathCount++; updateDeathCount();
         playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); b.active = false;
@@ -294,6 +305,7 @@ function respawn() {
   player.x = 50; player.y = 700; player.velX = 0; player.velY = 0;
   trollTriggers.forEach(t => t.spawned = false); meteorites.length = 0; bullets.length = 0; npc.shootTimer = SHOOT_INTERVAL;
   dragon.x = 600; dragon.y = -200; dragon.segments.forEach(s => { s.x = 600; s.y = -200; });
+  gunEvolutionLevel = 0; isGunEvolved = false; // Reset on death to make it a challenge
 }
 
 function updateUI(isAtApex: boolean) {
@@ -331,9 +343,9 @@ function draw() {
   ctx.fillStyle = '#facc15'; // Golden Yellow
   bullets.forEach(b => { 
     if (b.active) { 
-      const r = 4 + gunEvolutionLevel * 2;
+      const r = 4 * Math.pow(1.5, gunEvolutionLevel);
       ctx.save();
-      ctx.shadowBlur = 15; ctx.shadowColor = '#fef08a';
+      ctx.shadowBlur = 15 + gunEvolutionLevel * 10; ctx.shadowColor = '#fef08a';
       ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill(); 
       // Add sparks
       ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
