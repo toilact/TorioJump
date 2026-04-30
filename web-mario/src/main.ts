@@ -24,7 +24,7 @@ const config = {
 
 // --- State ---
 const player = {
-  x: 50, y: 400, width: 32, height: 48,
+  x: 50, y: 700, width: 32, height: 48,
   velX: 0, velY: 0,
   isGrounded: false, isJumping: false, jumpReleased: false,
   coyoteTimeCounter: 0, jumpBufferCounter: 0, jumpsRemaining: 2,
@@ -32,22 +32,22 @@ const player = {
 
 const keys: { [key: string]: boolean } = {};
 const platforms = [
-  { x: 0, y: 450, w: 150, h: 50 },
-  { x: 200, y: 380, w: 40, h: 20 },
-  { x: 300, y: 320, w: 40, h: 20 },
-  { x: 100, y: 240, w: 40, h: 20 },
-  { x: 250, y: 160, w: 200, h: 20, isMoving: true, startX: 250, range: 150 },
-  { x: 550, y: 220, w: 80, h: 20 },
-  { x: 700, y: 150, w: 40, h: 20 },
-  { x: 500, y: 80, w: 100, h: 20 },
-  { x: 700, y: 50, w: 60, h: 20 },
-  { x: 0, y: 495, w: 800, h: 10 }, // Pit floor
+  { x: 0, y: 750, w: 200, h: 50 },
+  { x: 250, y: 680, w: 60, h: 20 },
+  { x: 400, y: 600, w: 60, h: 20 },
+  { x: 200, y: 520, w: 60, h: 20 },
+  { x: 450, y: 440, w: 300, h: 20, isMoving: true, startX: 450, range: 250 },
+  { x: 850, y: 520, w: 120, h: 20 },
+  { x: 1050, y: 450, w: 60, h: 20 },
+  { x: 800, y: 350, w: 150, h: 20 },
+  { x: 1050, y: 250, w: 100, h: 20 },
+  { x: 0, y: 795, w: 1200, h: 10 }, // Pit floor
 ];
 
-const goal = { x: 710, y: -10, w: 40, h: 60 };
+const goal = { x: 1080, y: 180, w: 40, h: 60 };
 const meteorites: { x: number, y: number, w: number, h: number, active: boolean }[] = [];
-const trollTriggers = [ { x: 220, spawned: false }, { x: 500, spawned: false }, { x: 680, spawned: false } ];
-const npc = { x: 550, y: 180, w: 30, h: 40, shootTimer: 0 };
+const trollTriggers = [ { x: 300, spawned: false }, { x: 700, spawned: false }, { x: 950, spawned: false } ];
+const npc = { x: 850, y: 480, w: 30, h: 40, shootTimer: 0 };
 const bullets: { x: number, y: number, vx: number, vy: number, active: boolean }[] = [];
 
 const BULLET_SPEED = 400;
@@ -78,6 +78,23 @@ function playDeathSound() {
   osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 }
 
+function playBackgroundMusic() {
+  const notes = [261.63, 329.63, 392.00, 523.25, 349.23, 440.00, 523.25, 659.25]; 
+  const sequence = [0, 2, 1, 3, 4, 6, 5, 7];
+  let step = 0;
+  function nextNote() {
+    if (!gameStarted) return;
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type = 'square'; osc.frequency.setValueAtTime(notes[sequence[step % sequence.length]], audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    step++; setTimeout(nextNote, 250);
+  }
+  nextNote();
+}
+
 // --- UI & Logic ---
 const messageOverlay = document.getElementById('message-overlay')!;
 const messageText = document.getElementById('message-text')!;
@@ -96,7 +113,7 @@ startBtn.addEventListener('click', () => {
   playerName = nameInput.value.trim() || "Challenger";
   loginScreen.classList.add('hidden');
   gameStarted = true;
-  audioCtx.resume();
+  audioCtx.resume().then(() => playBackgroundMusic());
 });
 
 window.addEventListener('keydown', (e) => {
@@ -212,7 +229,7 @@ function update(dt: number) {
 }
 
 function respawn() {
-  player.x = 50; player.y = 400; player.velX = 0; player.velY = 0;
+  player.x = 50; player.y = 700; player.velX = 0; player.velY = 0;
   trollTriggers.forEach(t => t.spawned = false); meteorites.length = 0; bullets.length = 0; npc.shootTimer = SHOOT_INTERVAL;
 }
 
@@ -309,10 +326,10 @@ function draw() {
 }
 
 function drawBackground() {
-  const grad = ctx.createLinearGradient(0, 0, 0, 500); grad.addColorStop(0, '#020617'); grad.addColorStop(0.8, '#0f172a'); grad.addColorStop(1, '#450a0a');
+  const grad = ctx.createLinearGradient(0, 0, 0, 800); grad.addColorStop(0, '#020617'); grad.addColorStop(0.8, '#0f172a'); grad.addColorStop(1, '#450a0a');
   ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)'; ctx.lineWidth = 1;
-  for (let i = 0; i < 800; i += 50) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 500); ctx.stroke(); }
+  for (let i = 0; i < 1200; i += 50) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 800); ctx.stroke(); }
 }
 
 function loop(time: number) {
