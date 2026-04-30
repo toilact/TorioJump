@@ -66,6 +66,9 @@ let bestGoalScore = parseInt(localStorage.getItem('torio_best_goal') || '0');
 let isGunEvolved = false;
 let gunEvolutionLevel = 0;
 
+const lavaParticles: {x: number, y: number, vx: number, vy: number, active: boolean}[] = [];
+let volcanoTimer = 7;
+
 const dragon = { 
   x: 600, y: -200, active: true, phase: 'chase' as 'chase' | 'snap', 
   segments: Array.from({length: 40}, (_, i) => ({x: 600, y: -200 - i * 20})),
@@ -297,6 +300,39 @@ function update(dt: number) {
     }
   });
 
+  // Volcano Eruption Logic
+  volcanoTimer -= dt;
+  if (volcanoTimer <= 0) {
+    volcanoTimer = 7;
+    showMessage("VOLCANO ERUPTION! 🌋🔥", 2000);
+    for(let i=0; i<30; i++) {
+      lavaParticles.push({
+        x: Math.random() * canvas.width,
+        y: canvas.height + 20,
+        vx: (Math.random() - 0.5) * 400,
+        vy: -Math.random() * 800 - 400,
+        active: true
+      });
+    }
+  }
+
+  lavaParticles.forEach(p => {
+    if (p.active) {
+      p.vy += 800 * dt; // Gravity for lava
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      
+      const dx = (player.x + player.width/2) - p.x;
+      const dy = (player.y + player.height/2) - p.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 25) {
+        deathCount++; updateDeathCount();
+        playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn();
+        p.active = false;
+      }
+      if (p.y > canvas.height + 100) p.active = false;
+    }
+  });
+
   if (player.isGrounded) { player.coyoteTimeCounter = config.coyoteTime; player.isJumping = false; player.velY = 0; player.jumpsRemaining = 2; }
   updateUI(isAtApex);
 }
@@ -305,7 +341,7 @@ function respawn() {
   player.x = 50; player.y = 700; player.velX = 0; player.velY = 0;
   trollTriggers.forEach(t => t.spawned = false); meteorites.length = 0; bullets.length = 0; npc.shootTimer = SHOOT_INTERVAL;
   dragon.x = 600; dragon.y = -200; dragon.segments.forEach(s => { s.x = 600; s.y = -200; });
-  gunEvolutionLevel = 0; isGunEvolved = false; // Reset on death to make it a challenge
+  // gunEvolutionLevel is NOT reset as per request
 }
 
 function updateUI(isAtApex: boolean) {
@@ -357,6 +393,18 @@ function draw() {
       }
       ctx.restore();
     } 
+  });
+
+  // Draw Lava Particles
+  lavaParticles.forEach(p => {
+    if (p.active) {
+      ctx.save();
+      ctx.shadowBlur = 20; ctx.shadowColor = '#f97316';
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 10);
+      grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#fb923c'); grad.addColorStop(1, '#7c2d12');
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
   });
 
   // Draw Player (Doraemon with Professional Limbs)
