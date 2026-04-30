@@ -1,5 +1,7 @@
 # 🍄 TorioJump - Unfair Mario Web & Unity Demo
 
+![Game Cover](docs/images/cover.png)
+
 [![Unity](https://img.shields.io/badge/Unity-2022.3+-black?logo=unity&logoColor=white)](https://unity.com/)
 [![Vite](https://img.shields.io/badge/Vite-JS/TS-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Status](https://img.shields.io/badge/Status-Troll_Mode_Active-red)](#)
