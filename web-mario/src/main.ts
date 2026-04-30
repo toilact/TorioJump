@@ -61,10 +61,12 @@ let animationTime = 0;
 let lastTime = 0;
 let messageTimeout: number | undefined;
 
+let deathCount = parseInt(localStorage.getItem('torio_deaths') || '0');
+let isGunEvolved = false;
+
 const dragon = { 
-  x: 0, y: -600, active: false, targetY: 0, phase: 'descend' as 'descend' | 'snap', 
-  segments: [] as {x: number, y: number}[],
-  biteTimer: 0 
+  x: 600, y: -200, active: true, phase: 'chase' as 'chase' | 'snap', 
+  segments: Array.from({length: 40}, (_, i) => ({x: 600, y: -200 - i * 20})),
 };
 
 // --- Audio ---
@@ -100,6 +102,13 @@ function playBackgroundMusic() {
   }
   nextNote();
 }
+
+function updateDeathCount() {
+  const el = document.getElementById('death-count');
+  if (el) el.innerText = deathCount.toString();
+  localStorage.setItem('torio_deaths', deathCount.toString());
+}
+updateDeathCount();
 
 // --- UI & Logic ---
 const messageOverlay = document.getElementById('message-overlay')!;
@@ -189,39 +198,49 @@ function update(dt: number) {
   player.x += player.velX * dt; checkPlatformCollisions(true);
   player.y += player.velY * dt; player.isGrounded = false; checkPlatformCollisions(false);
 
-  if (player.y > canvas.height + 100) { playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); }
+  if (player.y > canvas.height + 100) { 
+    deathCount++; updateDeathCount();
+    playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); 
+  }
 
   if (!isFakeWinning && player.x < goal.x + goal.w && player.x + player.width > goal.x && player.y < goal.y + goal.h && player.y + player.height > goal.y) {
-    isFakeWinning = true; fakeWinTimer = 0; player.velX = 0; player.velY = 0;
-    showMessage("🖕", 5000); messageText.classList.add('huge');
+    isFakeWinning = true; isGunEvolved = true; fakeWinTimer = 0; 
+    showMessage("GUN EVOLVED! 🔫🔥", 3000);
   }
 
   if (isFakeWinning) {
-    fakeWinTimer += dt; player.velX = 0; player.velY = 0;
-    if (fakeWinTimer >= 1.5 && !dragon.active) {
-      dragon.active = true; dragon.x = player.x; dragon.y = -600; dragon.phase = 'descend';
-      dragon.segments = Array.from({length: 20}, (_, i) => ({x: dragon.x, y: dragon.y - i * 30}));
-    }
+    fakeWinTimer += dt;
+    if (fakeWinTimer > 3) isFakeWinning = false;
+  }
+
+  // Dragon Chase Logic
+  if (dragon.active) {
+    const targetX = player.x + player.width / 2;
+    const targetY = player.y + player.height / 2;
+    const dx = targetX - dragon.x;
+    const dy = targetY - dragon.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const speed = 120;
     
-    if (dragon.active) {
-      if (dragon.phase === 'descend') {
-        dragon.y += 150 * dt;
-        if (dragon.y > player.y - 200) dragon.phase = 'snap';
-      } else {
-        dragon.y += 800 * dt;
-        if (dragon.y > player.y - 30) {
-          playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); 
-          dragon.active = false; isFakeWinning = false;
-        }
+    dragon.x += (dx / dist) * speed * dt;
+    dragon.y += (dy / dist) * speed * dt;
+
+    dragon.segments[0] = {x: dragon.x, y: dragon.y};
+    for(let i = 1; i < dragon.segments.length; i++) {
+      const segDx = dragon.segments[i-1].x - dragon.segments[i].x;
+      const segDy = dragon.segments[i-1].y - dragon.segments[i].y;
+      const segDist = Math.sqrt(segDx * segDx + segDy * segDy);
+      if (segDist > 15) {
+        dragon.segments[i].x += segDx * 0.2;
+        dragon.segments[i].y += segDy * 0.2;
       }
-      dragon.segments[0] = {x: dragon.x, y: dragon.y};
-      for(let i = 1; i < dragon.segments.length; i++) {
-        const dx = dragon.segments[i-1].x - dragon.segments[i].x;
-        const dy = dragon.segments[i-1].y - dragon.segments[i].y;
-        dragon.segments[i].x += dx * 0.2;
-        dragon.segments[i].y += dy * 0.2;
-        dragon.segments[i].x += Math.sin(animationTime * 5 + i) * 2;
-      }
+      dragon.segments[i].x += Math.sin(animationTime * 3 + i) * 1.5;
+    }
+
+    // Dragon Collision
+    if (dist < 40) {
+      deathCount++; updateDeathCount();
+      playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn();
     }
   }
 
@@ -238,7 +257,7 @@ function update(dt: number) {
 
   npc.shootTimer -= dt;
   if (npc.shootTimer <= 0) {
-    npc.shootTimer = SHOOT_INTERVAL;
+    npc.shootTimer = isGunEvolved ? SHOOT_INTERVAL / 3 : SHOOT_INTERVAL;
     const dx = (player.x + player.width / 2) - (npc.x + npc.w / 2);
     const dy = (player.y + player.height / 2) - (npc.y + npc.h / 2);
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -246,11 +265,22 @@ function update(dt: number) {
   }
   bullets.forEach(b => {
     if (b.active) {
+      if (isGunEvolved) {
+        const dx = (player.x + player.width / 2) - b.x;
+        const dy = (player.y + player.height / 2) - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        b.vx += (dx / dist) * 500 * dt;
+        b.vy += (dy / dist) * 500 * dt;
+        const vDist = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        b.vx = (b.vx / vDist) * BULLET_SPEED;
+        b.vy = (b.vy / vDist) * BULLET_SPEED;
+      }
       b.x += b.vx * dt; b.y += b.vy * dt;
       if (player.x < b.x + 8 && player.x + player.width > b.x - 8 && player.y < b.y + 8 && player.y + player.height > b.y - 8) {
+        deathCount++; updateDeathCount();
         playDeathSound(); showMessage(`${playerName} Gà Quá Haha`, 1500); respawn(); b.active = false;
       }
-      if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) b.active = false;
+      if (b.x < -100 || b.x > canvas.width + 100 || b.y < -100 || b.y > canvas.height + 100) b.active = false;
     }
   });
 
@@ -261,6 +291,7 @@ function update(dt: number) {
 function respawn() {
   player.x = 50; player.y = 700; player.velX = 0; player.velY = 0;
   trollTriggers.forEach(t => t.spawned = false); meteorites.length = 0; bullets.length = 0; npc.shootTimer = SHOOT_INTERVAL;
+  dragon.x = 600; dragon.y = -200; dragon.segments.forEach(s => { s.x = 600; s.y = -200; });
 }
 
 function updateUI(isAtApex: boolean) {
@@ -359,45 +390,66 @@ function draw() {
 
 function drawDragon() {
   ctx.save();
-  // Draw Body Segments
-  ctx.lineWidth = 40; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#166534'; // Dark Green
+  // Body Segments (Shenron style)
+  ctx.lineWidth = 30; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  
+  // Outer Body (Dark Green)
+  ctx.strokeStyle = '#064e3b'; 
   ctx.beginPath();
   ctx.moveTo(dragon.segments[0].x, dragon.segments[0].y);
   dragon.segments.forEach(s => ctx.lineTo(s.x, s.y));
   ctx.stroke();
 
-  // Spikes on back
-  ctx.strokeStyle = '#14532d'; ctx.lineWidth = 20;
+  // Inner Body (Lighter Green)
+  ctx.lineWidth = 15; ctx.strokeStyle = '#10b981';
   ctx.beginPath();
-  dragon.segments.forEach((s, i) => { if (i % 2 === 0) ctx.lineTo(s.x + Math.cos(i) * 30, s.y); });
+  ctx.moveTo(dragon.segments[0].x, dragon.segments[0].y);
+  dragon.segments.forEach(s => ctx.lineTo(s.x, s.y));
   ctx.stroke();
+
+  // Spikes (Red)
+  ctx.fillStyle = '#ef4444';
+  dragon.segments.forEach((s, i) => {
+    if (i % 3 === 0) {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y - 15, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
 
   // Dragon Head
   const head = dragon.segments[0];
+  const next = dragon.segments[1];
+  const angle = Math.atan2(head.y - next.y, head.x - next.x);
+  
   ctx.translate(head.x, head.y);
-  ctx.rotate(Math.PI / 2); // Face down
+  ctx.rotate(angle);
 
   // Head Shape
-  ctx.fillStyle = '#16a34a'; // Brighter Green
+  ctx.fillStyle = '#065f46';
   ctx.beginPath();
-  ctx.moveTo(-30, 0); ctx.lineTo(30, 0); ctx.lineTo(40, 60); ctx.lineTo(-40, 60); ctx.closePath();
+  ctx.ellipse(20, 0, 35, 20, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eyes (Glowing Red)
-  ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 15; ctx.shadowColor = 'red';
-  ctx.beginPath(); ctx.arc(-15, 30, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(15, 30, 8, 0, Math.PI * 2); ctx.fill();
+  // Eyes (Glow)
+  ctx.fillStyle = '#facc15'; ctx.shadowBlur = 15; ctx.shadowColor = 'yellow';
+  ctx.beginPath(); ctx.arc(15, -8, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(15, 8, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
 
-  // Teeth
-  ctx.fillStyle = 'white'; ctx.shadowBlur = 0;
-  ctx.beginPath(); ctx.moveTo(-30, 60); ctx.lineTo(-20, 45); ctx.lineTo(-10, 60); 
-  ctx.lineTo(0, 45); ctx.lineTo(10, 60); ctx.lineTo(20, 45); ctx.lineTo(30, 60); ctx.fill();
+  // Whiskers (Long)
+  ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(10, -5); ctx.bezierCurveTo(40, -40, 80, -20, 100, -60);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(10, 5); ctx.bezierCurveTo(40, 40, 80, 20, 100, 60);
+  ctx.stroke();
 
   // Horns
-  ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 8;
-  ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-40, -30); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(40, -30); ctx.stroke();
+  ctx.strokeStyle = '#92400e'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-20, -30); ctx.lineTo(-15, -45); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-20, 30); ctx.lineTo(-15, 45); ctx.stroke();
 
   ctx.restore();
 }
